@@ -1,0 +1,6 @@
+To open the input waveforms, please use the following steps:
+1. Each folder in the repository named Baseline Method, Combination 1 and Combination 2 have Input folders.
+2. Open the input folder and the input folder will have three subfolders namely 80, 100 and 120. 
+3. Each folder e.g. 80 has one abdomen, three heart and three lung files as they indicate the change in delta T1. 
+4. Load these csv files in matlab and write a code to extract rows and columns which would be saved in certain variables. 
+5. Those variables would be entered in the repeating sequence block in Simulink which will then represent the waveform which we have made.

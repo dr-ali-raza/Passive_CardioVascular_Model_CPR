@@ -1,0 +1,31 @@
+component(Hidden=true) branch
+% Hydraulic Branch
+% Defines a hydraulic branch with external hydraulic-conserving ports A
+% and B. Also defines associated through and across variables q and p.
+
+% Copyright 2005-2013 The MathWorks, Inc.
+
+  nodes
+    A = foundation.hydraulic.hydraulic;
+    B = foundation.hydraulic.hydraulic;
+  end
+  
+  annotations
+    A : Side = left;
+    B : Side = right;
+  end
+
+  variables
+    q = { 1e-3 , 'm^3/s' };    % Flow rate
+    p = { 0 ,     'Pa'    };    % Pressure differential
+  end
+
+  branches
+    q : A.q -> B.q;
+  end
+
+  equations
+    p == A.p - B.p;
+  end
+
+end

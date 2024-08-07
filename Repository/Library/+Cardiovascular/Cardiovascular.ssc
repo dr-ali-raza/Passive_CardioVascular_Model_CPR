@@ -1,0 +1,90 @@
+component Cardiovascular
+% Variable C Compliance Chamber : 1.5
+% The block represents a variable-compliance compliance chamber 
+% which can be used to model various compartments of the cardiovascular tree.
+%
+% C takes the time-varying compliance of the chamber as an input.
+
+% Created by Luca Rosalia at Massachusetts Institute of Technology in August 2020
+
+inputs
+    V = { 1.2e-12, 'm/Pa'  };    % C:bottom
+end
+
+nodes
+    A = foundation.hydraulic.hydraulic; % :top
+end
+
+parameters
+
+    d_in             = { 1e-2,    'm'     };	% Chamber internal diameter
+    length           = { 1,       'm'     };	% Cylindrical chamber length
+    time_const       = { 0.01,    's'     };	% Viscoelastic process time constant
+    k_sh             = { 1.4,     '1'     };	% Specific heat ratio
+end
+
+parameters(Access=private)
+    p_a       = {101325, 'Pa' }; % Atmospheric pressure
+    p_min     = {-1,     'atm'}; % -1 atm
+    v_chamber = pi*d_in*d_in/4*length; % Chamber volume
+end
+
+variables
+    % Differential variables
+    pressure      = {value = {0, 'Pa'}, priority = priority.high}; % Pressure (gauge)
+    diameter_incr = {value = {0, 'm' }, priority = priority.high}; % Diameter increase
+    
+    % Algebraic
+    flow_rate = {1e-3,   'm^3/s'};  % Volumetric flow rate into chamber
+end
+
+variables(Access=private)
+    bulk_inst = { 0.8e9 , 'Pa'  };    % Instantaneous bulk modulus
+end
+
+branches
+    flow_rate : A.q -> *;
+end
+
+equations
+    assert(d_in > 0)
+    assert(length > 0)
+    assert(V > 0)
+    assert(time_const > 0)
+    pressure == A.p;
+    if A.range_error == 1
+        assert(pressure > p_min, Warn=true)
+    elseif A.range_error == 2
+        assert(pressure > p_min)
+    else
+    end
+    
+    assert(k_sh >= 1)
+
+let
+    p_abs = p_a + pressure;             % Absolute pressure
+    p_nom = (p_a/p_abs)^(1/k_sh);       % Relative absolute pressure
+    p_den = p_nom*A.bulk/(k_sh*p_abs);
+    volume = pi*(d_in + diameter_incr)^2/4*length;
+    expansion_coeff = (1+pressure/bulk_inst);               % Expansion coefficient
+
+    % Variation of volume due to fluid compressibility
+    Vdot1 = volume / bulk_inst * pressure.der;
+
+    % Variation of volume due to wall compliance
+    d_fl_volume_d_diam_incr = 2*pi*(d_in + diameter_incr)/4*length*expansion_coeff;
+    Vdot2 = d_fl_volume_d_diam_incr * diameter_incr.der;
+
+in
+    flow_rate == Vdot1 + Vdot2;
+
+    % Diameter increase with pressure
+    pressure == 1/V*diameter_incr + time_const/V*diameter_incr.der;
+
+    % Instantaneous bulk modulus
+    bulk_inst == A.bulk*(1+A.alpha*p_nom)/(1+A.alpha*p_den);
+
+end
+end
+
+end
